@@ -3,11 +3,11 @@
 # 1. The Secure S3 Bucket
 resource "aws_s3_bucket" "terraform_state" {
   # Replace 'your-unique-alias' with something globally unique (e.g., your initials and date)
-  bucket = "multi-cloud-rag-state-your-unique-alias" 
+  bucket = "multi-cloud-rag-state-your-unique-alias"
 
   # Prevents accidental deletion of this critical bucket
   lifecycle {
-    prevent_destroy = true 
+    prevent_destroy = true
   }
 }
 
