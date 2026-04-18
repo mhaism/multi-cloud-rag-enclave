@@ -11,11 +11,13 @@ jobs:
     name: 'Terraform Execution'
     runs-on: ubuntu-latest
 
-    # These environment variables tell Terraform how to authenticate with AWS to read the state file
+    # This env block is CRITICAL. It passes authentication and variables to Terraform.
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: 'ap-southeast-2'
+      TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+      TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Checkout Repository
@@ -39,13 +41,31 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        id: tflint
+        run: |
+          tflint --init
+          tflint -f compact
+
+      - name: Run Checkov Security Scan
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform
+          soft_fail: false 
+
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
         run: terraform plan -no-color -input=false
         continue-on-error: true
 
-      # Only apply if we are pushing directly to the main branch
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
