@@ -26,7 +26,7 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
-	pinecone = {
+    pinecone = {
       source  = "pinecone-io/pinecone"
       version = "~> 2.0.0" # Updated for 2026 features
     }

@@ -2,8 +2,8 @@
 # Using the 2026 Free Tier spec for zero hourly cost
 resource "pinecone_index" "enclave_index" {
   name                = "enclave-rag-index"
-  dimension           = 384       # Matches all-MiniLM-L6-v2
-  metric              = "cosine"  # Best for semantic similarity
+  dimension           = 384      # Matches all-MiniLM-L6-v2
+  metric              = "cosine" # Best for semantic similarity
   deletion_protection = "disabled"
 
   spec = {
@@ -32,7 +32,7 @@ resource "aws_lambda_function" "ingestor" {
   architectures    = ["arm64"] # 20% better price-performance
   timeout          = 30        # AI processing takes longer than standard code
   memory_size      = 512       # The "sweet spot" for small AI models
-  source_code_hash = data.archive_file.lambda_zip.output_base64_sha256
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   environment {
     variables = {
