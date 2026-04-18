@@ -1,6 +1,18 @@
+# providers.tf
+
 terraform {
   required_version = ">= 1.5.0"
 
+  # 1. THE BACKEND BLOCK MUST LIVE INSIDE THIS 'terraform' BLOCK
+  backend "s3" {
+    bucket         = "multi-cloud-rag-state-mm-041826" 
+    key            = "global/s3/terraform.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "multi-cloud-rag-state-locks"
+    encrypt        = true
+  }
+
+  # 2. REQUIRED PROVIDERS ALSO LIVE INSIDE THE 'terraform' BLOCK
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -17,27 +29,17 @@ terraform {
   }
 }
 
-# AWS Provider Configuration
+# 3. ACTUAL PROVIDER CONFIGS MUST LIVE OUTSIDE THE 'terraform' BLOCK
 provider "aws" {
   region = var.aws_region
 }
 
-# Google Cloud Provider Configuration
 provider "google" {
   project = var.gcp_project_id
   region  = var.gcp_region
 }
 
-# Azure Provider Configuration
 provider "azurerm" {
   features {}
   subscription_id = var.azure_subscription_id
-}
-backend "s3" {
-  # Make sure this is also strictly lowercase!
-  bucket         = "multi-cloud-rag-state-mm-041826"
-  key            = "global/s3/terraform.tfstate"
-  region         = "ap-southeast-2"
-  dynamodb_table = "multi-cloud-rag-state-locks"
-  encrypt        = true
 }
