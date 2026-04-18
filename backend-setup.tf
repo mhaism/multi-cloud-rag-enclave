@@ -59,3 +59,31 @@ resource "aws_dynamodb_table" "terraform_locks" {
     enabled = true
   }
 }
+# --- STATE ADOPTION BLOCKS ---
+# These blocks force the CI/CD pipeline to adopt the existing AWS resources 
+# into its remote state file instead of trying to recreate them.
+
+import {
+  to = aws_s3_bucket.terraform_state
+  id = "multi-cloud-rag-state-mm-041826"
+}
+
+import {
+  to = aws_s3_bucket_versioning.terraform_state
+  id = "multi-cloud-rag-state-mm-041826"
+}
+
+import {
+  to = aws_s3_bucket_server_side_encryption_configuration.terraform_state
+  id = "multi-cloud-rag-state-mm-041826"
+}
+
+import {
+  to = aws_s3_bucket_public_access_block.terraform_state
+  id = "multi-cloud-rag-state-mm-041826"
+}
+
+import {
+  to = aws_dynamodb_table.terraform_locks
+  id = "multi-cloud-rag-state-locks"
+}
