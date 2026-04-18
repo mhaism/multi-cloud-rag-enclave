@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "terraform_state" {
   # checkov:skip=CKV2_AWS_61: Lifecycle data expiration is not required; state must persist
 
   # REPLACE THIS with your globally unique name
-  bucket = "multi-cloud-rag-state-MM-041826"
+  bucket = "multi-cloud-rag-state-mm-041826"
 
   lifecycle {
     prevent_destroy = true

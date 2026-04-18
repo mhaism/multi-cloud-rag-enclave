@@ -33,3 +33,11 @@ provider "azurerm" {
   features {}
   subscription_id = var.azure_subscription_id
 }
+backend "s3" {
+  # Make sure this is also strictly lowercase!
+  bucket         = "multi-cloud-rag-state-mm-041826"
+  key            = "global/s3/terraform.tfstate"
+  region         = "ap-southeast-2"
+  dynamodb_table = "multi-cloud-rag-state-locks"
+  encrypt        = true
+}
