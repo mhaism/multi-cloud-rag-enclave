@@ -32,7 +32,7 @@ terraform {
     }
 	archive = {
       source  = "hashicorp/archive"
-      version = "~> 2.4.0" # Specifically lock this version
+      version = "~> 2.7.0" # Specifically lock this version
     }
   }
 }
