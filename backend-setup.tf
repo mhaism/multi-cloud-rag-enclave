@@ -1,14 +1,15 @@
 # backend-setup.tf
 
 # 1. The Secure S3 Bucket
-# checkov:skip=CKV_AWS_144: Cross-region replication is overkill for this lab's state file
-# checkov:skip=CKV_AWS_18: Access logging is overkill for this lab's state file
-# checkov:skip=CKV_AWS_145: AES256 server-side encryption is sufficient; dedicated KMS key is overkill
-# checkov:skip=CKV2_AWS_62: Event notifications are not required for terraform state
-# checkov:skip=CKV2_AWS_61: Lifecycle data expiration is not required; state must persist
 resource "aws_s3_bucket" "terraform_state" {
+  # checkov:skip=CKV_AWS_144: Cross-region replication is overkill for this lab's state file
+  # checkov:skip=CKV_AWS_18: Access logging is overkill for this lab's state file
+  # checkov:skip=CKV_AWS_145: AES256 server-side encryption is sufficient; dedicated KMS key is overkill
+  # checkov:skip=CKV2_AWS_62: Event notifications are not required for terraform state
+  # checkov:skip=CKV2_AWS_61: Lifecycle data expiration is not required; state must persist
+
   # REPLACE THIS with your globally unique name
-  bucket = "multi-cloud-rag-state-yourinitials-041826"
+  bucket = "multi-cloud-rag-state-MM-041826"
 
   lifecycle {
     prevent_destroy = true
@@ -43,8 +44,8 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 }
 
 # 5. The DynamoDB Table for State Locking
-# checkov:skip=CKV_AWS_119: Default AWS-owned encryption is sufficient; Customer Managed Key is overkill
 resource "aws_dynamodb_table" "terraform_locks" {
+  # checkov:skip=CKV_AWS_119: Default AWS-owned encryption is sufficient; Customer Managed Key is overkill
   name         = "multi-cloud-rag-state-locks"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
@@ -54,7 +55,6 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 
-  # FIX for CKV_AWS_28: Enable Point-in-time recovery (Backups)
   point_in_time_recovery {
     enabled = true
   }
