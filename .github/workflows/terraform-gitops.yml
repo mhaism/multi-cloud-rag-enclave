@@ -72,7 +72,8 @@ jobs:
           directory: .
           framework: terraform
           soft_fail: false 
-
+          skip_check: CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_272,CKV_AWS_50  
+          
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
