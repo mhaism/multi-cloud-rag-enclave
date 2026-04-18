@@ -1,17 +1,21 @@
 # backend-setup.tf
 
 # 1. The Secure S3 Bucket
+# checkov:skip=CKV_AWS_144: Cross-region replication is overkill for this lab's state file
+# checkov:skip=CKV_AWS_18: Access logging is overkill for this lab's state file
+# checkov:skip=CKV_AWS_145: AES256 server-side encryption is sufficient; dedicated KMS key is overkill
+# checkov:skip=CKV2_AWS_62: Event notifications are not required for terraform state
+# checkov:skip=CKV2_AWS_61: Lifecycle data expiration is not required; state must persist
 resource "aws_s3_bucket" "terraform_state" {
-  # Replace 'your-unique-alias' with something globally unique (e.g., your initials and date)
-  bucket = "multi-cloud-rag-state-your-unique-alias"
+  # REPLACE THIS with your globally unique name
+  bucket = "multi-cloud-rag-state-yourinitials-041826"
 
-  # Prevents accidental deletion of this critical bucket
   lifecycle {
     prevent_destroy = true
   }
 }
 
-# 2. Enable Versioning (Crucial for rolling back state corruption)
+# 2. Enable Versioning
 resource "aws_s3_bucket_versioning" "terraform_state" {
   bucket = aws_s3_bucket.terraform_state.id
   versioning_configuration {
@@ -19,7 +23,7 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
   }
 }
 
-# 3. Force Server-Side Encryption
+# 3. Force Server-Side Encryption (AES256)
 resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
   bucket = aws_s3_bucket.terraform_state.id
   rule {
@@ -29,7 +33,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" 
   }
 }
 
-# 4. Block ALL Public Access (Zero Trust baseline)
+# 4. Block ALL Public Access
 resource "aws_s3_bucket_public_access_block" "terraform_state" {
   bucket                  = aws_s3_bucket.terraform_state.id
   block_public_acls       = true
@@ -39,6 +43,7 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 }
 
 # 5. The DynamoDB Table for State Locking
+# checkov:skip=CKV_AWS_119: Default AWS-owned encryption is sufficient; Customer Managed Key is overkill
 resource "aws_dynamodb_table" "terraform_locks" {
   name         = "multi-cloud-rag-state-locks"
   billing_mode = "PAY_PER_REQUEST"
@@ -47,5 +52,10 @@ resource "aws_dynamodb_table" "terraform_locks" {
   attribute {
     name = "LockID"
     type = "S"
+  }
+
+  # FIX for CKV_AWS_28: Enable Point-in-time recovery (Backups)
+  point_in_time_recovery {
+    enabled = true
   }
 }
