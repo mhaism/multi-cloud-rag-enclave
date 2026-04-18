@@ -24,14 +24,20 @@ data "archive_file" "lambda_zip" {
 
 # 3. THE AI WORKER (AWS LAMBDA)
 resource "aws_lambda_function" "ingestor" {
+  # checkov:skip=CKV_AWS_115: Concurrency limit not required for small-scale lab ingestor
+  # checkov:skip=CKV_AWS_116: DLQ not required for initial testing phase
+  # checkov:skip=CKV_AWS_117: Lambda inside VPC adds NAT Gateway costs; keeping public for zero-burn
+  # checkov:skip=CKV_AWS_272: Code-signing not required for this development lab
+  # checkov:skip=CKV_AWS_50: X-Ray tracing disabled to minimize overhead/cost
+  
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "enclave-document-ingestor"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "ingestor.lambda_handler"
   runtime          = "python3.12"
-  architectures    = ["arm64"] # 20% better price-performance
-  timeout          = 30        # AI processing takes longer than standard code
-  memory_size      = 512       # The "sweet spot" for small AI models
+  architectures    = ["arm64"] 
+  timeout          = 30        
+  memory_size      = 512       
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   environment {
