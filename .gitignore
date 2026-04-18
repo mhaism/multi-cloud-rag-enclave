@@ -4,3 +4,4 @@
 *.tfstate.backup
 .terraform.tfstate.lock.info
 *.tfvars
+gcp-key.json
