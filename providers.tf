@@ -26,6 +26,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+	pinecone = {
+      source  = "pinecone-io/pinecone"
+      version = "~> 2.0.0" # Updated for 2026 features
+    }
   }
 }
 
@@ -38,7 +42,9 @@ provider "google" {
   project = var.gcp_project_id
   region  = var.gcp_region
 }
-
+provider "pinecone" {
+  api_key = var.pinecone_api_key
+}
 provider "azurerm" {
   features {}
   subscription_id = var.azure_subscription_id

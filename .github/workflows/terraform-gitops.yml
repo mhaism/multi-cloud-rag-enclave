@@ -29,6 +29,8 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      TF_VAR_pinecone_api_key: ${{ secrets.PINECONE_API_KEY }}
 
     steps:
       - name: Checkout Repository

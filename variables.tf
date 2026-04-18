@@ -19,3 +19,8 @@ variable "azure_subscription_id" {
   type        = string
   description = "Your Azure Subscription ID for Entra ID"
 }
+variable "pinecone_api_key" {
+  description = "API Key for Pinecone Vector DB"
+  type        = string
+  sensitive   = true
+}
