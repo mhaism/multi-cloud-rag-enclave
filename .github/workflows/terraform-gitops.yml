@@ -28,19 +28,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Required for auto-commit
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.5.0"
 
+      # --- STEP 3: BUNDLING (Moved before Init) ---
+      - name: Install Dependencies and Bundle Lambda
+        run: |
+          mkdir -p package
+          pip install -r requirements.txt -t package/
+          cp ingestor.py package/
+
       # --- AUTO-HEALING START ---
       - name: Auto-Format Terraform
         id: fmt
         run: |
           terraform fmt -recursive
-          # Check if there are changes; if so, commit them back to the repo
           if [ -n "$(git status --porcelain)" ]; then
             git config --global user.name 'github-actions[bot]'
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -65,16 +71,8 @@ jobs:
       - name: Run Checkov (Direct CLI Soft-Fail)
         run: |
           pip install checkov
-          # Using --soft-fail to bypass lab-specific cost constraints
           checkov -d . --framework terraform --soft-fail --skip-check CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_272,CKV_AWS_50
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
-        
-       - name: Install Dependencies and Bundle Lambda
-         run: |
-          mkdir -p package
-          pip install -r requirements.txt -t package/
-          cp ingestor.py package/
-          # The zip is now handled by Terraform's archive_file using the 'package' dir
