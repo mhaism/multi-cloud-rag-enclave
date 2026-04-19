@@ -35,12 +35,13 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
-      # --- STEP 3: BUNDLING (Moved before Init) ---
+      # --- STEP 3: BUNDLING (Fixed with Zip Command) ---
       - name: Install Dependencies and Bundle Lambda
         run: |
           mkdir -p package
           pip install -r requirements.txt -t package/
           cp ingestor.py package/
+          cd package && zip -r ../lambda_function.zip .
 
       # --- AUTO-HEALING START ---
       - name: Auto-Format Terraform
