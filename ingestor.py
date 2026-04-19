@@ -30,4 +30,4 @@ def lambda_handler(event, context):
     
     print(f"Successfully ingested: {key}")
     return {'statusCode': 200, 'body': json.dumps('Ingestion Complete')}
-'@ | Out-File -FilePath ingestor.py -Encoding utf8
+'@ | Out-File -FilePath ingestor.py -Encoding utf8# Force update 04/20/2026 09:29:02
