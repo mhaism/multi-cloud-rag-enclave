@@ -4,13 +4,13 @@ terraform {
   required_version = ">= 1.5.0"
 
   # 1. THE BACKEND BLOCK MUST LIVE INSIDE THIS 'terraform' BLOCK
-  # backend "s3" {
-  #  bucket         = "multi-cloud-rag-state-mm-041826" 
-  # key            = "global/s3/terraform.tfstate"
-  # region         = "ap-southeast-2"
+  backend "s3" {
+    bucket = "multi-cloud-rag-state-mm-041826" # Ensure this matches your bucket
+    key    = "terraform.tfstate"
+    region = "ap-southeast-2"
   # dynamodb_table = "multi-cloud-rag-state-locks"
   # encrypt        = true
-  # }
+  }
 
   # 2. REQUIRED PROVIDERS ALSO LIVE INSIDE THE 'terraform' BLOCK
   required_providers {

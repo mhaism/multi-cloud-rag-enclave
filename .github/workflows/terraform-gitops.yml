@@ -1,4 +1,4 @@
-name: 'Multi-Cloud GitOps Pipeline'
+name: 'Multi-Cloud GitOps Auto-Heal'
 
 on:
   push:
@@ -12,20 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # AWS Auth
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: 'ap-southeast-2'
-      
-      # Terraform Variables
       TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
       TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_pinecone_api_key: ${{ secrets.PINECONE_API_KEY }}
-
-      # GCP Auth
       GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-
-      # Azure Auth
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
@@ -34,47 +27,46 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Required for auto-commit
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3 # Updated to v3 for 2026 stability
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.5.0"
 
-      - name: Terraform Format Check
+      # --- AUTO-HEALING START ---
+      - name: Auto-Format Terraform
         id: fmt
-        run: terraform fmt -check
-        continue-on-error: true
+        run: |
+          terraform fmt -recursive
+          # Check if there are changes; if so, commit them back to the repo
+          if [ -n "$(git status --porcelain)" ]; then
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add .
+            git commit -m "style: auto-fix terraform formatting [skip ci]"
+            git push
+          fi
+      # --- AUTO-HEALING END ---
 
       - name: Terraform Init
-        id: init
         run: terraform init -upgrade
 
       - name: Terraform Validate
-        id: validate
         run: terraform validate -no-color
 
-      - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
-        with:
-          tflint_version: latest
-
       - name: Run TFLint
-        id: tflint
         run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
           tflint --init
           tflint -f compact
 
-      - name: Run Checkov Security Scan
-        id: checkov
+      - name: Run Checkov (Direct CLI Soft-Fail)
         run: |
           pip install checkov
-          # We use --soft-fail to ensure the pipeline stays green for this lab
+          # Using --soft-fail to bypass lab-specific cost constraints
           checkov -d . --framework terraform --soft-fail --skip-check CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_272,CKV_AWS_50
-      - name: Terraform Plan
-        id: plan
-        if: github.event_name == 'pull_request'
-        run: terraform plan -no-color -input=false
-        continue-on-error: true
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'

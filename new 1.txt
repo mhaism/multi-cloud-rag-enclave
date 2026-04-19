@@ -1,2 +1,15 @@
 pcsk_7WMpw8_Gi8VGi3SKzWjAJBru4nzrbtqXaD7Qi492qLB3G8migfxuerggvjyAZmCEhDCz33
 Pinecone
+
+7e117905-1901-4467-862b-57f5c73f8e38
+azure sub id
+
+project-5eb321fb-28e4-488a-82a
+GCP
+
+
+019711414472
+aws accc ID
+
+terraform import azurerm_resource_group.network /subscriptions/7e117905-1901-4467-862b-57f5c73f8e38/resourceGroups/enclave-network-rg
+terraform import google_compute_network.vpc projects/project-5eb321fb-28e4-488a-82a/global/networks/enclave-gcp-vpc
