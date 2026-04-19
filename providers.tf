@@ -8,8 +8,8 @@ terraform {
     bucket = "multi-cloud-rag-state-mm-041826" # Ensure this matches your bucket
     key    = "terraform.tfstate"
     region = "ap-southeast-2"
-  # dynamodb_table = "multi-cloud-rag-state-locks"
-  # encrypt        = true
+    # dynamodb_table = "multi-cloud-rag-state-locks"
+    # encrypt        = true
   }
 
   # 2. REQUIRED PROVIDERS ALSO LIVE INSIDE THE 'terraform' BLOCK
