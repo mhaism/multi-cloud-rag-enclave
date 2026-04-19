@@ -30,7 +30,7 @@ terraform {
       source  = "pinecone-io/pinecone"
       version = "~> 2.0.0" # Updated for 2026 features
     }
-	archive = {
+    archive = {
       source  = "hashicorp/archive"
       version = "~> 2.7.0" # Specifically lock this version
     }
