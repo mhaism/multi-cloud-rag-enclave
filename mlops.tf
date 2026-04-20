@@ -1,8 +1,8 @@
 # 1. THE VECTOR DATABASE (PINECONE SERVERLESS)
 resource "pinecone_index" "enclave_index" {
   name                = "enclave-rag-index"
-  dimension           = 768      # Matches Vertex AI text-embedding-004
-  metric              = "cosine" 
+  dimension           = 768 # Matches Vertex AI text-embedding-004
+  metric              = "cosine"
   deletion_protection = "disabled"
 
   spec = {
@@ -20,19 +20,19 @@ resource "aws_s3_object" "lambda_package" {
   key    = "deployments/lambda_function.zip"
   source = "lambda_function.zip"
   # This triggers an update only when the file content actually changes
-  etag   = filemd5("lambda_function.zip")
+  etag = filemd5("lambda_function.zip")
 }
 
 # 3. THE AI WORKER (AWS LAMBDA)
 resource "aws_lambda_function" "ingestor" {
-  function_name    = "enclave-document-ingestor"
-  role             = aws_iam_role.lambda_exec.arn
-  handler          = "ingestor.lambda_handler"
-  runtime          = "python3.12"
-  architectures    = ["arm64"]
-  timeout          = 30
-  memory_size      = 512
-  
+  function_name = "enclave-document-ingestor"
+  role          = aws_iam_role.lambda_exec.arn
+  handler       = "ingestor.lambda_handler"
+  runtime       = "python3.12"
+  architectures = ["arm64"]
+  timeout       = 30
+  memory_size   = 512
+
   # Pointing to the S3 Object instead of a local filename to handle the large size
   s3_bucket        = aws_s3_object.lambda_package.bucket
   s3_key           = aws_s3_object.lambda_package.key
@@ -72,8 +72,8 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action   = ["s3:GetObject"]
-        Effect   = "Allow"
+        Action = ["s3:GetObject"]
+        Effect = "Allow"
         # Corrected Resource syntax
         Resource = ["arn:aws:s3:::multi-cloud-rag-state-mm-041826/*"]
       },
