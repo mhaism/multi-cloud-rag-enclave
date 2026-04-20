@@ -37,7 +37,7 @@ jobs:
           terraform_version: "1.5.0"
 
       # --- STEP 3: BUNDLING (Fixed with Zip Command) ---
-    - name: Clean and Bundle Lambda
+      - name: Clean and Bundle Lambda
         run: |
           # 1. Force a clean slate
           rm -rf package
