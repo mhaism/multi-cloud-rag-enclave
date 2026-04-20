@@ -42,14 +42,14 @@ jobs:
         run: |
           rm -rf bundle
           mkdir -p bundle
-          # Install ONLY Pinecone (Google SDK is now bypassed)
+          # Install ONLY Pinecone and Requests (Total size ~10MB)
           pip install \
             --platform manylinux2014_aarch64 \
             --target ./bundle \
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
-            pinecone-client boto3 requests
+            pinecone-client requests boto3
           
           cp ingestor.py ./bundle/
           cd bundle && zip -r ../lambda_function.zip . && cd ..

@@ -14,13 +14,13 @@ resource "pinecone_index" "enclave_index" {
 }
 
 # 2. THE HEAVY DEPENDENCIES (LAMBDA LAYER)
-resource "aws_s3_object" "lambda_layer_zip" {
+resource "aws_s3_object" "lambda_package" {
   bucket = "multi-cloud-rag-state-mm-041826"
-  key    = "layers/dependencies_v2.zip"
-  source = "dependencies.zip"
-  etag   = filemd5("dependencies.zip")
+  key    = "deployments/lambda_function.zip"
+  source = "lambda_function.zip"
+  # This etag will now point to the single small ZIP built in the YAML
+  etag   = filemd5("lambda_function.zip")
 }
-
 resource "aws_lambda_layer_version" "enclave_deps" {
   layer_name               = "enclave-google-pinecone-layer"
   s3_bucket                = aws_s3_object.lambda_layer_zip.bucket
@@ -36,13 +36,14 @@ resource "aws_lambda_function" "ingestor" {
   handler       = "ingestor.lambda_handler"
   runtime       = "python3.12"
   architectures = ["arm64"]
+  timeout       = 30
+  memory_size   = 256 # Reduced memory since we aren't loading heavy SDKs
 
-  # Upload ONLY the code (very small, no more size errors!)
-  filename         = "lambda_function.zip"
-  source_code_hash = filebase64sha256("lambda_code.zip")
-
-  # Attach the heavy library layer
-  layers = [aws_lambda_layer_version.enclave_deps.arn]
+  s3_bucket = aws_s3_object.lambda_package.bucket
+  s3_key    = aws_s3_object.lambda_package.key
+  
+  # No layers needed anymore!
+  layers    = []
 
   environment {
     variables = {
@@ -53,7 +54,6 @@ resource "aws_lambda_function" "ingestor" {
     }
   }
 }
-
 # 4. IAM PERMISSIONS (RETAINED)
 resource "aws_iam_role" "lambda_exec" {
   name = "enclave_lambda_role"
