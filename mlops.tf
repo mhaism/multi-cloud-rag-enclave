@@ -14,7 +14,9 @@ resource "pinecone_index" "enclave_index" {
   }
 }
 
-filename         = "lambda_function.zip" 
+# 2. THE AI WORKER (AWS LAMBDA)
+resource "aws_lambda_function" "ingestor" {
+  filename         = "lambda_function.zip"
   function_name    = "enclave-document-ingestor"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "ingestor.lambda_handler"
@@ -22,7 +24,7 @@ filename         = "lambda_function.zip"
   architectures    = ["arm64"]
   timeout          = 30
   memory_size      = 512
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  source_code_hash = filebase64sha256("lambda_function.zip")
 
   environment {
     variables = {
