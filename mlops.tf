@@ -1,3 +1,6 @@
+variable "gcp_project_id" { type = string }
+variable "google_credentials" { type = string }
+
 # 1. THE VECTOR DATABASE (PINECONE SERVERLESS)
 # Using the 2026 Free Tier spec for zero hourly cost
 resource "pinecone_index" "enclave_index" {
@@ -29,6 +32,10 @@ resource "aws_lambda_function" "ingestor" {
   environment {
     variables = {
       PINECONE_API_KEY = var.pinecone_api_key
+      GCP_PROJECT_ID   = var.gcp_project_id
+      GCP_REGION       = "us-central1"
+      # This passes the JSON string directly
+      GOOGLE_CREDENTIALS_JSON = var.google_credentials
     }
   }
 }
@@ -94,3 +101,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 } # Policy Refresh 04/20/2026 10:20:09
 # Force Trigger Sync 04/20/2026 10:58:47
 # Force Trigger Sync 04/20/2026 10:59:26
+output "pinecone_api_key" {
+  value     = var.pinecone_api_key
+  sensitive = true
+}
