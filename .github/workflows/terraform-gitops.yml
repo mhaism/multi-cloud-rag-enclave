@@ -38,7 +38,7 @@ jobs:
 
       # --- CONSOLIDATED BUNDLING STEP ---
       # This builds a FLAT zip named lambda_function.zip for the ARM64 runtime.
-     - name: Build Lambda Package
+      - name: Build Lambda Package
         run: |
           rm -rf bundle
           mkdir -p bundle
