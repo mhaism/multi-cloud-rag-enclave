@@ -16,7 +16,7 @@ resource "pinecone_index" "enclave_index" {
 # 2. THE HEAVY DEPENDENCIES (LAMBDA LAYER)
 resource "aws_s3_object" "lambda_layer_zip" {
   bucket = "multi-cloud-rag-state-mm-041826"
-  key    = "layers/dependencies.zip"
+  key    = "layers/dependencies_v2.zip"
   source = "dependencies.zip"
   etag   = filemd5("dependencies.zip")
 }
