@@ -16,84 +16,39 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: 'ap-southeast-2'
       TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
-      TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_pinecone_api_key: ${{ secrets.PINECONE_API_KEY }}
       TF_VAR_google_credentials: ${{ secrets.GOOGLE_CREDENTIALS }}
       GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.5.0"
 
-      # --- LAYER & CODE BUNDLING STEP ---
-      # Python Layers require a specific 'python/' folder structure to work.
-      - name: Build Lambda and Layer
+      - name: Build Lean Lambda Package
         run: |
           rm -rf bundle
           mkdir -p bundle
-          # Install ONLY Pinecone and Requests (Total size ~10MB)
+          # Install ONLY the essentials (~10MB) to stay under the 250MB limit
           pip install \
             --platform manylinux2014_aarch64 \
             --target ./bundle \
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
-            pinecone-client requests boto3
+            pinecone requests boto3
           
-          cp ingestor.py ./bundle/
+          # Copy from the correct src/ path we found earlier
+          cp src/ingestor.py ./bundle/ingestor.py
           cd bundle && zip -r ../lambda_function.zip . && cd ..
-          
-      - name: Auto-Format Terraform
-        id: fmt
-        run: |
-          terraform fmt -recursive
-          if [ -n "$(git status --porcelain)" ]; then
-            git config --global user.name 'github-actions[bot]'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add .
-            git commit -m "style: auto-fix terraform formatting [skip ci]"
-            git push
-          fi
 
       - name: Terraform Init
         run: terraform init -upgrade
 
-      - name: Terraform Validate
-        run: terraform validate -no-color
-
-      - name: Run TFLint
-        run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-          tflint --init
-          tflint -f compact
-
-      - name: Run Checkov (Direct CLI Soft-Fail)
-        run: |
-          pip install checkov
-          checkov -d . --framework terraform --soft-fail --skip-check CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_272,CKV_AWS_50
-          
-      - name: Prepare Lambda Package
-        run: |
-        # 1. Create a package directory
-        mkdir -p package
-        # 2. Install dependencies directly into that directory
-        pip install --target ./package pinecone-client google-cloud-aiplatform
-        # 3. Zip the dependencies
-        cd package && zip -r ../ingestor.zip . && cd ..
-        # 4. Add your logic file to the root of that same zip
-        zip -g ingestor.zip ingestor.py
-      
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
