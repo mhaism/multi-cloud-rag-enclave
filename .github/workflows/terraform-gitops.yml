@@ -41,7 +41,7 @@ jobs:
           mkdir -p package
           pip install -r requirements.txt -t package/
           cp ingestor.py package/
-          cd package && zip -r ../lambda_function.zip .
+          zip -r lambda_function.zip . -x "*.git*" "terraform*" ".github*"         
 
       # --- AUTO-HEALING START ---
       - name: Auto-Format Terraform
@@ -77,3 +77,4 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
+   

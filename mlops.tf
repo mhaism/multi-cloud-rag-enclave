@@ -15,12 +15,12 @@ resource "pinecone_index" "enclave_index" {
 }
 
 # 2. CODE PACKAGING
-# Automatically zips your 'src' folder for deployment
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/src"
-  output_path = "${path.module}/build/ingestor.zip"
-}
+ # Automatically zips your 'src' folder for deployment
+ #data "archive_file" "lambda_zip" {
+ # type        = "zip"
+ # source_dir  = "${path.module}/src"
+ # output_path = "${path.module}/build/ingestor.zip"
+ #}
 
 # 3. THE AI WORKER (AWS LAMBDA)
 resource "aws_lambda_function" "ingestor" {
@@ -30,7 +30,7 @@ resource "aws_lambda_function" "ingestor" {
   # checkov:skip=CKV_AWS_272: Code-signing not required for this development lab
   # checkov:skip=CKV_AWS_50: X-Ray tracing disabled to minimize overhead/cost
 
-  filename         = data.archive_file.lambda_zip.output_path
+filename         = "lambda_function.zip" 
   function_name    = "enclave-document-ingestor"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "ingestor.lambda_handler"
