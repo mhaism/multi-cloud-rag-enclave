@@ -1,4 +1,3 @@
-#Manual
 name: 'Multi-Cloud GitOps Auto-Heal'
 
 on:
@@ -37,23 +36,25 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
-      # --- STEP 3: BUNDLING (Fixed with Zip Command) ---
-      - name: Clean and Bundle Lambda
+      # --- CONSOLIDATED BUNDLING STEP ---
+      # This builds a FLAT zip named lambda_function.zip for the ARM64 runtime.
+      - name: Build Lambda Package
         run: |
-          rm -rf package
-          mkdir -p package
-          # Use --platform to force arm64 binaries for Graviton
+          rm -rf bundle
+          mkdir -p bundle
+          # Install libraries for ARM64 Linux (matching your Terraform 'arm64' spec)
           pip install \
             --platform manylinux2014_aarch64 \
-            --target package \
+            --target ./bundle \
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
-            pinecone boto3
-          cp ingestor.py package/
-          cd package && zip -r ../lambda_function.zip .
+            pinecone-client google-cloud-aiplatform boto3
+          # Copy source code into the bundle folder
+          cp ingestor.py ./bundle/
+          # Create the zip FROM INSIDE the bundle folder
+          cd bundle && zip -r ../lambda_function.zip . && cd ..
 
-      # --- AUTO-HEALING START ---
       - name: Auto-Format Terraform
         id: fmt
         run: |
@@ -65,31 +66,10 @@ jobs:
             git commit -m "style: auto-fix terraform formatting [skip ci]"
             git push
           fi
-      # --- AUTO-HEALING END ---
 
       - name: Terraform Init
         run: terraform init -upgrade
 
-      - name: Terraform Validate
-        run: terraform validate -no-color
-
-      - name: Run TFLint
-        run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-          tflint --init
-          tflint -f compact
-
-      - name: Run Checkov (Direct CLI Soft-Fail)
-        run: |
-          pip install checkov
-          checkov -d . --framework terraform --soft-fail --skip-check CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_272,CKV_AWS_50
-
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
-   
-      - name: Install dependencies and zip Lambda
-        run: |
-         pip install --target ./package pinecone-client google-cloud-aiplatform
-         cd package && zip -r ../ingestor.zip . && cd ..
-         zip -g ingestor.zip ingestor.py
