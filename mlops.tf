@@ -91,4 +91,4 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   }
 
   depends_on = [aws_lambda_permission.allow_s3]
-}# Policy Refresh 04/20/2026 10:20:09
+} # Policy Refresh 04/20/2026 10:20:09
