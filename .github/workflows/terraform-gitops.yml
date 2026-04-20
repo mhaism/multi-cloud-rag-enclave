@@ -42,7 +42,7 @@ jobs:
         run: |
           rm -rf bundle
           mkdir -p bundle
-          # FIX: Replacing 'pinecone-client' with 'pinecone'
+          # Install ONLY the essential sub-packages
           pip install \
             --platform manylinux2014_aarch64 \
             --target ./bundle \
@@ -50,6 +50,13 @@ jobs:
             --python-version 3.12 \
             --only-binary=:all: \
             pinecone google-cloud-aiplatform boto3
+          
+          # EXTREME PRUNE: Remove massive sub-folders not needed for embeddings
+          find ./bundle -name "tests" -type d -exec rm -rf {} +
+          find ./bundle -name "__pycache__" -type d -exec rm -rf {} +
+          rm -rf ./bundle/google/cloud/aiplatform_v1beta1  # Remove beta versions
+          rm -rf ./bundle/google/cloud/aiplatform_v1       # Keep only the base
+          rm -rf ./bundle/external                         # Usually massive and unused
           
           cp ingestor.py ./bundle/
           cd bundle && zip -r ../lambda_function.zip . && cd ..
