@@ -36,19 +36,25 @@ jobs:
 
       - name: Build Lean Lambda Package
         run: |
-          rm -rf bundle
+          # 1. Clean workspace
+          rm -rf bundle lambda_function.zip
           mkdir -p bundle
-          # Install ONLY the essentials (~10MB) to stay under the 250MB limit
+          
+          # 2. FORCE install modern pinecone (No cache, explicit version)
           pip install \
+            --no-cache-dir \
             --platform manylinux2014_aarch64 \
             --target ./bundle \
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
-            pinecone requests boto3
+            "pinecone>=5.0.0" requests boto3
           
-          # Copy from the correct src/ path we found earlier
+          # 3. Clean out any 'pinecone-client' metadata that might cause the error
+          rm -rf ./bundle/pinecone_client* # 4. Copy the NEW code from the src folder
           cp src/ingestor.py ./bundle/ingestor.py
+          
+          # 5. Build the ZIP
           cd bundle && zip -r ../lambda_function.zip . && cd ..
 
       - name: Terraform Init
