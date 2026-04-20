@@ -22,10 +22,10 @@ resource "aws_s3_object" "lambda_layer_zip" {
 }
 
 resource "aws_lambda_layer_version" "enclave_deps" {
-  layer_name         = "enclave-google-pinecone-layer"
-  s3_bucket          = aws_s3_object.lambda_layer_zip.bucket
-  s3_key             = aws_s3_object.lambda_layer_zip.key
-  compatible_runtimes = ["python3.12"]
+  layer_name               = "enclave-google-pinecone-layer"
+  s3_bucket                = aws_s3_object.lambda_layer_zip.bucket
+  s3_key                   = aws_s3_object.lambda_layer_zip.key
+  compatible_runtimes      = ["python3.12"]
   compatible_architectures = ["arm64"]
 }
 
@@ -62,8 +62,8 @@ resource "aws_iam_role" "lambda_exec" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
       Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
