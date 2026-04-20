@@ -51,12 +51,16 @@ jobs:
             pinecone google-cloud-aiplatform boto3
           
           # Prune ONLY non-essential bloat (Keep v1 and v1beta1 to prevent ImportErrors)
+          find layer_dir/python -name "*.dist-info" -type d -exec rm -rf {} +
+          find layer_dir/python -name "*.egg-info" -type d -exec rm -rf {} +
           find layer_dir/python -name "tests" -type d -exec rm -rf {} +
-          find layer_dir/python -name "__pycache__" -type d -exec rm -rf {} +
-          rm -rf layer_dir/python/pandas layer_dir/python/numpy layer_dir/python/matplotlib
-          
-          # Create the Layer ZIP from the root of layer_dir
+          find layer_dir/python -name "*.pyc" -delete
+          rm -rf layer_dir/python/google/cloud/aiplatform_v1beta1
+          rm -rf layer_dir/python/google/api_core/gapic_v1
+          rm -rf layer_dir/python/pandas
+          rm -rf layer_dir/python/matplotlib
           cd layer_dir && zip -r ../dependencies.zip . && cd ..
+          zip lambda_code.zip ingestor.py
 
           # 2. Build the Code (Just the Python script)
           zip lambda_code.zip ingestor.py
