@@ -49,7 +49,7 @@ jobs:
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
-            pinecone-client google-cloud-aiplatform boto3
+            pinecone google-cloud-aiplatform boto3
           # Copy source code into the bundle folder
           cp ingestor.py ./bundle/
           # Create the zip FROM INSIDE the bundle folder
