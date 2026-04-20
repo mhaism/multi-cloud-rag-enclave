@@ -42,7 +42,7 @@ jobs:
         run: |
           rm -rf bundle
           mkdir -p bundle
-          # Install libraries for ARM64 Linux (matching your Terraform 'arm64' spec)
+          # FIX: Replacing 'pinecone-client' with 'pinecone'
           pip install \
             --platform manylinux2014_aarch64 \
             --target ./bundle \
@@ -50,11 +50,6 @@ jobs:
             --python-version 3.12 \
             --only-binary=:all: \
             pinecone google-cloud-aiplatform boto3
-         # 2. STRIP BLOAT: Remove tests, documentation, and compiled cache
-          find ./bundle -name "tests" -type d -exec rm -rf {} +
-          find ./bundle -name "*.pyc" -delete
-          rm -rf ./bundle/*.dist-info
-          rm -rf ./bundle/*.egg-info
           
           cp ingestor.py ./bundle/
           cd bundle && zip -r ../lambda_function.zip . && cd ..
