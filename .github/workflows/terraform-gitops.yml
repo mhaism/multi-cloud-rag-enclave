@@ -38,11 +38,11 @@ jobs:
 
       # --- CONSOLIDATED BUNDLING STEP ---
       # This builds a FLAT zip named lambda_function.zip for the ARM64 runtime.
-      - name: Build Lambda Package
+     - name: Build Lambda Package
         run: |
           rm -rf bundle
           mkdir -p bundle
-          # Install ONLY the essential sub-packages
+          # 1. Install Pinecone and the standard Google Cloud AI Platform
           pip install \
             --platform manylinux2014_aarch64 \
             --target ./bundle \
@@ -51,12 +51,18 @@ jobs:
             --only-binary=:all: \
             pinecone google-cloud-aiplatform boto3
           
-          # EXTREME PRUNE: Remove massive sub-folders not needed for embeddings
+          # 2. SURGICAL PRUNE: Delete massive sub-folders NOT used for text embeddings
+          # We keep aiplatform_v1 because your error proved it's a hard dependency
           find ./bundle -name "tests" -type d -exec rm -rf {} +
           find ./bundle -name "__pycache__" -type d -exec rm -rf {} +
-          rm -rf ./bundle/google/cloud/aiplatform_v1beta1  # Remove beta versions
-          rm -rf ./bundle/google/cloud/aiplatform_v1       # Keep only the base
-          rm -rf ./bundle/external                         # Usually massive and unused
+          
+          # Remove the massive 'gapic' and 'v1beta1' folders to save ~80MB
+          rm -rf ./bundle/google/cloud/aiplatform_v1beta1
+          rm -rf ./bundle/google/cloud/aiplatform/gapic
+          
+          # Remove unused heavy dependencies if they were pulled in
+          rm -rf ./bundle/pandas
+          rm -rf ./bundle/numpy
           
           cp ingestor.py ./bundle/
           cd bundle && zip -r ../lambda_function.zip . && cd ..
