@@ -50,9 +50,13 @@ jobs:
             --python-version 3.12 \
             --only-binary=:all: \
             pinecone google-cloud-aiplatform boto3
-          # Copy source code into the bundle folder
+         # 2. STRIP BLOAT: Remove tests, documentation, and compiled cache
+          find ./bundle -name "tests" -type d -exec rm -rf {} +
+          find ./bundle -name "*.pyc" -delete
+          rm -rf ./bundle/*.dist-info
+          rm -rf ./bundle/*.egg-info
+          
           cp ingestor.py ./bundle/
-          # Create the zip FROM INSIDE the bundle folder
           cd bundle && zip -r ../lambda_function.zip . && cd ..
 
       - name: Auto-Format Terraform
