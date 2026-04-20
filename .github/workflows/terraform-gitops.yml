@@ -36,12 +36,20 @@ jobs:
           terraform_version: "1.5.0"
 
       # --- STEP 3: BUNDLING (Fixed with Zip Command) ---
-      - name: Install Dependencies and Bundle Lambda
+    - name: Clean and Bundle Lambda
         run: |
+          # 1. Force a clean slate
+          rm -rf package
           mkdir -p package
-          pip install -r requirements.txt -t package/
+          
+          # 2. Install ONLY the modern library
+          pip install pinecone boto3 -t package/
+          
+          # 3. Add your script
           cp ingestor.py package/
-          zip -r lambda_function.zip . -x "*.git*" "terraform*" ".github*"         
+          
+          # 4. Flatten and zip
+          cd package && zip -r ../lambda_function.zip .
 
       # --- AUTO-HEALING START ---
       - name: Auto-Format Terraform
