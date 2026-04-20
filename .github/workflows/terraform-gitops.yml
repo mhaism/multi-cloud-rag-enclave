@@ -69,6 +69,31 @@ jobs:
       - name: Terraform Init
         run: terraform init -upgrade
 
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Run TFLint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          tflint --init
+          tflint -f compact
+
+      - name: Run Checkov (Direct CLI Soft-Fail)
+        run: |
+          pip install checkov
+          checkov -d . --framework terraform --soft-fail --skip-check CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_272,CKV_AWS_50
+          
+      - name: Prepare Lambda Package
+        run: |
+        # 1. Create a package directory
+        mkdir -p package
+        # 2. Install dependencies directly into that directory
+        pip install --target ./package pinecone-client google-cloud-aiplatform
+        # 3. Zip the dependencies
+        cd package && zip -r ../ingestor.zip . && cd ..
+        # 4. Add your logic file to the root of that same zip
+        zip -g ingestor.zip ingestor.py
+      
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
