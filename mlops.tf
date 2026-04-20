@@ -18,17 +18,8 @@ resource "aws_s3_object" "lambda_package" {
   bucket = "multi-cloud-rag-state-mm-041826"
   key    = "deployments/lambda_function.zip"
   source = "lambda_function.zip"
-  # This etag will now point to the single small ZIP built in the YAML
   etag   = filemd5("lambda_function.zip")
 }
-resource "aws_lambda_layer_version" "enclave_deps" {
-  layer_name               = "enclave-google-pinecone-layer"
-  s3_bucket                = aws_s3_object.lambda_layer_zip.bucket
-  s3_key                   = aws_s3_object.lambda_layer_zip.key
-  compatible_runtimes      = ["python3.12"]
-  compatible_architectures = ["arm64"]
-}
-
 # 3. THE AI WORKER (AWS LAMBDA)
 resource "aws_lambda_function" "ingestor" {
   function_name = "enclave-document-ingestor"

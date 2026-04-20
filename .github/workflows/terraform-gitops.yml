@@ -54,10 +54,6 @@ jobs:
           cp ingestor.py ./bundle/
           cd bundle && zip -r ../lambda_function.zip . && cd ..
           
-
-          # 2. Build the Code (Just the Python script)
-          zip lambda_code.zip ingestor.py
-
       - name: Auto-Format Terraform
         id: fmt
         run: |
