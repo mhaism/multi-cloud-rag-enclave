@@ -1,6 +1,3 @@
-variable "gcp_project_id" { type = string }
-variable "google_credentials" { type = string }
-
 # 1. THE VECTOR DATABASE (PINECONE SERVERLESS)
 # Using the 2026 Free Tier spec for zero hourly cost
 resource "pinecone_index" "enclave_index" {
