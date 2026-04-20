@@ -29,7 +29,7 @@ resource "aws_lambda_function" "ingestor" {
   role             = aws_iam_role.lambda_exec.arn
   handler          = "ingestor.lambda_handler"
   runtime          = "python3.12"
-  architectures    = ["arm64"] # [cite: 3]
+  architectures    = ["arm64"]
   timeout          = 30
   memory_size      = 512
   
@@ -74,8 +74,8 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
       {
         Action   = ["s3:GetObject"]
         Effect   = "Allow"
-        # Increased scope to allow Lambda to read its own deployment package
-        Resource = ["arn:aws:s3:::multi-cloud-rag-state-mm-041826/*"] [cite: 5]
+        # Corrected Resource syntax
+        Resource = ["arn:aws:s3:::multi-cloud-rag-state-mm-041826/*"]
       },
       {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
@@ -102,7 +102,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     lambda_function_arn = aws_lambda_function.ingestor.arn
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "documents/"
-    filter_suffix       = ".txt" [cite: 7]
+    filter_suffix       = ".txt"
   }
 
   depends_on = [aws_lambda_permission.allow_s3]
