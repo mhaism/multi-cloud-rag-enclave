@@ -88,3 +88,8 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
    
+      - name: Install dependencies and zip Lambda
+        run: |
+         pip install --target ./package pinecone-client google-cloud-aiplatform
+         cd package && zip -r ../ingestor.zip . && cd ..
+         zip -g ingestor.zip ingestor.py
