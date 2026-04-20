@@ -30,3 +30,4 @@ def lambda_handler(event, context):
     # index.upsert(vectors=[{"id": key, "values": dummy_vector}])
     
     return {"statusCode": 200, "body": "Optimization Successful"}
+# Force Deployment v3
