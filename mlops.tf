@@ -1,43 +1,54 @@
 # 1. THE VECTOR DATABASE (PINECONE SERVERLESS)
-# Using the 2026 Free Tier spec for zero hourly cost
 resource "pinecone_index" "enclave_index" {
   name                = "enclave-rag-index"
-  dimension           = 768      # Matches all-MiniLM-L6-v2
-  metric              = "cosine" # Best for semantic similarity
+  dimension           = 768      # Matches Vertex AI text-embedding-004
+  metric              = "cosine" 
   deletion_protection = "disabled"
 
   spec = {
     serverless = {
       cloud  = "aws"
-      region = "us-east-1" # The primary 2026 free-tier region
+      region = "us-east-1"
     }
   }
 }
 
-# 2. THE AI WORKER (AWS LAMBDA)
+# 2. THE DEPLOYMENT PACKAGE (S3 SIDE-LOAD)
+# This resource handles the large file upload to bypass the 70MB API limit.
+resource "aws_s3_object" "lambda_package" {
+  bucket = "multi-cloud-rag-state-mm-041826"
+  key    = "deployments/lambda_function.zip"
+  source = "lambda_function.zip"
+  # This triggers an update only when the file content actually changes
+  etag   = filemd5("lambda_function.zip")
+}
+
+# 3. THE AI WORKER (AWS LAMBDA)
 resource "aws_lambda_function" "ingestor" {
-  filename         = "lambda_function.zip"
   function_name    = "enclave-document-ingestor"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "ingestor.lambda_handler"
   runtime          = "python3.12"
-  architectures    = ["arm64"]
+  architectures    = ["arm64"] # [cite: 3]
   timeout          = 30
   memory_size      = 512
+  
+  # Pointing to the S3 Object instead of a local filename to handle the large size
+  s3_bucket        = aws_s3_object.lambda_package.bucket
+  s3_key           = aws_s3_object.lambda_package.key
   source_code_hash = filebase64sha256("lambda_function.zip")
 
   environment {
     variables = {
-      PINECONE_API_KEY = var.pinecone_api_key
-      GCP_PROJECT_ID   = var.gcp_project_id
-      GCP_REGION       = "us-central1"
-      # This passes the JSON string directly
+      PINECONE_API_KEY        = var.pinecone_api_key
+      GCP_PROJECT_ID          = var.gcp_project_id
+      GCP_REGION              = "us-central1"
       GOOGLE_CREDENTIALS_JSON = var.google_credentials
     }
   }
 }
 
-# 4. IAM PERMISSIONS (THE SECURITY GUARD)
+# 4. IAM PERMISSIONS
 resource "aws_iam_role" "lambda_exec" {
   name = "enclave_lambda_role"
 
@@ -53,7 +64,6 @@ resource "aws_iam_role" "lambda_exec" {
   })
 }
 
-# Allow Lambda to read from your S3 bucket
 resource "aws_iam_role_policy" "lambda_s3_policy" {
   name = "enclave_lambda_s3_policy"
   role = aws_iam_role.lambda_exec.id
@@ -64,7 +74,8 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
       {
         Action   = ["s3:GetObject"]
         Effect   = "Allow"
-        Resource = ["arn:aws:s3:::multi-cloud-rag-state-mm-041826/documents/*"]
+        # Increased scope to allow Lambda to read its own deployment package
+        Resource = ["arn:aws:s3:::multi-cloud-rag-state-mm-041826/*"] [cite: 5]
       },
       {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
@@ -75,7 +86,7 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
   })
 }
 
-# 5. THE S3 TRIGGER (THE "ALARM CLOCK")
+# 5. THE S3 TRIGGER
 resource "aws_lambda_permission" "allow_s3" {
   statement_id  = "AllowS3Invoke"
   action        = "lambda:InvokeFunction"
@@ -91,13 +102,12 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     lambda_function_arn = aws_lambda_function.ingestor.arn
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "documents/"
-    filter_suffix       = ".txt"
+    filter_suffix       = ".txt" [cite: 7]
   }
 
   depends_on = [aws_lambda_permission.allow_s3]
-} # Policy Refresh 04/20/2026 10:20:09
-# Force Trigger Sync 04/20/2026 10:58:47
-# Force Trigger Sync 04/20/2026 10:59:26
+}
+
 output "pinecone_api_key" {
   value     = var.pinecone_api_key
   sensitive = true
