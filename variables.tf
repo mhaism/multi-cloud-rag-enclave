@@ -10,9 +10,16 @@ variable "gcp_region" {
   default     = "australia-southeast1" # Sydney
 }
 
+# KEEP THESE IN variables.tf
 variable "gcp_project_id" {
   type        = string
-  description = "Your Google Cloud Project ID"
+  description = "The GCP project ID for Vertex AI"
+}
+
+variable "google_credentials" {
+  type        = string
+  description = "JSON service account key for GCP"
+  sensitive   = true
 }
 
 variable "azure_subscription_id" {
