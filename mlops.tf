@@ -36,11 +36,9 @@ resource "aws_lambda_function" "ingestor" {
   handler       = "ingestor.lambda_handler"
   runtime       = "python3.12"
   architectures = ["arm64"]
-  timeout       = 30
-  memory_size   = 512
 
   # Upload ONLY the code (very small, no more size errors!)
-  filename         = "lambda_code.zip"
+  filename         = "lambda_function.zip"
   source_code_hash = filebase64sha256("lambda_code.zip")
 
   # Attach the heavy library layer

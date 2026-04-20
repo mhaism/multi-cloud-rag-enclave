@@ -40,27 +40,20 @@ jobs:
       # Python Layers require a specific 'python/' folder structure to work.
       - name: Build Lambda and Layer
         run: |
-          # 1. Build the Layer (Libraries)
-          mkdir -p layer_dir/python
+          rm -rf bundle
+          mkdir -p bundle
+          # Install ONLY Pinecone (Google SDK is now bypassed)
           pip install \
             --platform manylinux2014_aarch64 \
-            --target layer_dir/python \
+            --target ./bundle \
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
-            pinecone google-cloud-aiplatform boto3
+            pinecone-client boto3 requests
           
-          # Prune ONLY non-essential bloat (Keep v1 and v1beta1 to prevent ImportErrors)
-          find layer_dir/python -name "*.dist-info" -type d -exec rm -rf {} +
-          find layer_dir/python -name "*.egg-info" -type d -exec rm -rf {} +
-          find layer_dir/python -name "tests" -type d -exec rm -rf {} +
-          find layer_dir/python -name "*.pyc" -delete
-          rm -rf layer_dir/python/google/cloud/aiplatform_v1beta1
-          rm -rf layer_dir/python/google/api_core/gapic_v1
-          rm -rf layer_dir/python/pandas
-          rm -rf layer_dir/python/matplotlib
-          cd layer_dir && zip -r ../dependencies.zip . && cd ..
-          zip lambda_code.zip ingestor.py
+          cp ingestor.py ./bundle/
+          cd bundle && zip -r ../lambda_function.zip . && cd ..
+          
 
           # 2. Build the Code (Just the Python script)
           zip lambda_code.zip ingestor.py
