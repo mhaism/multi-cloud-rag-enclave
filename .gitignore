@@ -7,3 +7,8 @@ terraform.tfvars
 *.tfvars
 gcp-key.json
 gcp-credentials.json
+
+__pycache__/
+*.pyc
+.terraform/
+*.zip
