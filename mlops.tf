@@ -2,7 +2,7 @@
 # Using the 2026 Free Tier spec for zero hourly cost
 resource "pinecone_index" "enclave_index" {
   name                = "enclave-rag-index"
-  dimension           = 784      # Matches all-MiniLM-L6-v2
+  dimension           = 768      # Matches all-MiniLM-L6-v2
   metric              = "cosine" # Best for semantic similarity
   deletion_protection = "disabled"
 
