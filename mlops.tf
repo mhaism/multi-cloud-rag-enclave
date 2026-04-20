@@ -1,7 +1,7 @@
 # 1. THE VECTOR DATABASE (PINECONE SERVERLESS)
 resource "pinecone_index" "enclave_index" {
   name                = "enclave-rag-index"
-  dimension           = 768 # Matches Vertex AI text-embedding-004
+  dimension           = 768
   metric              = "cosine"
   deletion_protection = "disabled"
 
@@ -13,14 +13,20 @@ resource "pinecone_index" "enclave_index" {
   }
 }
 
-# 2. THE DEPLOYMENT PACKAGE (S3 SIDE-LOAD)
-# This resource handles the large file upload to bypass the 70MB API limit.
-resource "aws_s3_object" "lambda_package" {
+# 2. THE HEAVY DEPENDENCIES (LAMBDA LAYER)
+resource "aws_s3_object" "lambda_layer_zip" {
   bucket = "multi-cloud-rag-state-mm-041826"
-  key    = "deployments/lambda_function.zip"
-  source = "lambda_function.zip"
-  # This triggers an update only when the file content actually changes
-  etag = filemd5("lambda_function.zip")
+  key    = "layers/dependencies.zip"
+  source = "dependencies.zip"
+  etag   = filemd5("dependencies.zip")
+}
+
+resource "aws_lambda_layer_version" "enclave_deps" {
+  layer_name         = "enclave-google-pinecone-layer"
+  s3_bucket          = aws_s3_object.lambda_layer_zip.bucket
+  s3_key             = aws_s3_object.lambda_layer_zip.key
+  compatible_runtimes = ["python3.12"]
+  compatible_architectures = ["arm64"]
 }
 
 # 3. THE AI WORKER (AWS LAMBDA)
@@ -33,10 +39,12 @@ resource "aws_lambda_function" "ingestor" {
   timeout       = 30
   memory_size   = 512
 
-  # Pointing to the S3 Object instead of a local filename to handle the large size
-  s3_bucket        = aws_s3_object.lambda_package.bucket
-  s3_key           = aws_s3_object.lambda_package.key
-  source_code_hash = filebase64sha256("lambda_function.zip")
+  # Upload ONLY the code (very small, no more size errors!)
+  filename         = "lambda_code.zip"
+  source_code_hash = filebase64sha256("lambda_code.zip")
+
+  # Attach the heavy library layer
+  layers = [aws_lambda_layer_version.enclave_deps.arn]
 
   environment {
     variables = {
@@ -48,18 +56,15 @@ resource "aws_lambda_function" "ingestor" {
   }
 }
 
-# 4. IAM PERMISSIONS
+# 4. IAM PERMISSIONS (RETAINED)
 resource "aws_iam_role" "lambda_exec" {
   name = "enclave_lambda_role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Action = "sts:AssumeRole"
       Effect = "Allow"
-      Principal = {
-        Service = "lambda.amazonaws.com"
-      }
+      Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
 }
@@ -67,14 +72,12 @@ resource "aws_iam_role" "lambda_exec" {
 resource "aws_iam_role_policy" "lambda_s3_policy" {
   name = "enclave_lambda_s3_policy"
   role = aws_iam_role.lambda_exec.id
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action = ["s3:GetObject"]
-        Effect = "Allow"
-        # Corrected Resource syntax
+        Action   = ["s3:GetObject"]
+        Effect   = "Allow"
         Resource = ["arn:aws:s3:::multi-cloud-rag-state-mm-041826/*"]
       },
       {
@@ -86,7 +89,7 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
   })
 }
 
-# 5. THE S3 TRIGGER
+# 5. THE S3 TRIGGER (RETAINED)
 resource "aws_lambda_permission" "allow_s3" {
   statement_id  = "AllowS3Invoke"
   action        = "lambda:InvokeFunction"
@@ -97,14 +100,12 @@ resource "aws_lambda_permission" "allow_s3" {
 
 resource "aws_s3_bucket_notification" "bucket_notification" {
   bucket = "multi-cloud-rag-state-mm-041826"
-
   lambda_function {
     lambda_function_arn = aws_lambda_function.ingestor.arn
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "documents/"
     filter_suffix       = ".txt"
   }
-
   depends_on = [aws_lambda_permission.allow_s3]
 }
 

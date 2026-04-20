@@ -36,36 +36,30 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
-      # --- CONSOLIDATED BUNDLING STEP ---
-      # This builds a FLAT zip named lambda_function.zip for the ARM64 runtime.
-      - name: Build Lambda Package
+      # --- LAYER & CODE BUNDLING STEP ---
+      # Python Layers require a specific 'python/' folder structure to work.
+      - name: Build Lambda and Layer
         run: |
-          rm -rf bundle
-          mkdir -p bundle
-          # 1. Install Pinecone and the standard Google Cloud AI Platform
+          # 1. Build the Layer (Libraries)
+          mkdir -p layer_dir/python
           pip install \
             --platform manylinux2014_aarch64 \
-            --target ./bundle \
+            --target layer_dir/python \
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
             pinecone google-cloud-aiplatform boto3
           
-          # 2. SURGICAL PRUNE: Delete massive sub-folders NOT used for text embeddings
-          # We keep aiplatform_v1 because your error proved it's a hard dependency
-          find ./bundle -name "tests" -type d -exec rm -rf {} +
-          find ./bundle -name "__pycache__" -type d -exec rm -rf {} +
+          # Prune ONLY non-essential bloat (Keep v1 and v1beta1 to prevent ImportErrors)
+          find layer_dir/python -name "tests" -type d -exec rm -rf {} +
+          find layer_dir/python -name "__pycache__" -type d -exec rm -rf {} +
+          rm -rf layer_dir/python/pandas layer_dir/python/numpy layer_dir/python/matplotlib
           
-          # Remove the massive 'gapic' and 'v1beta1' folders to save ~80MB
-          rm -rf ./bundle/google/cloud/aiplatform_v1beta1
-          rm -rf ./bundle/google/cloud/aiplatform/gapic
-          
-          # Remove unused heavy dependencies if they were pulled in
-          rm -rf ./bundle/pandas
-          rm -rf ./bundle/numpy
-          
-          cp ingestor.py ./bundle/
-          cd bundle && zip -r ../lambda_function.zip . && cd ..
+          # Create the Layer ZIP from the root of layer_dir
+          cd layer_dir && zip -r ../dependencies.zip . && cd ..
+
+          # 2. Build the Code (Just the Python script)
+          zip lambda_code.zip ingestor.py
 
       - name: Auto-Format Terraform
         id: fmt
