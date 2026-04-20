@@ -32,9 +32,9 @@ resource "aws_lambda_function" "ingestor" {
 
   s3_bucket = aws_s3_object.lambda_package.bucket
   s3_key    = aws_s3_object.lambda_package.key
-  
+
   # No layers needed anymore!
-  layers    = []
+  layers = []
 
   environment {
     variables = {
