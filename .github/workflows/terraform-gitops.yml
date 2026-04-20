@@ -39,17 +39,17 @@ jobs:
       # --- STEP 3: BUNDLING (Fixed with Zip Command) ---
       - name: Clean and Bundle Lambda
         run: |
-          # 1. Force a clean slate
           rm -rf package
           mkdir -p package
-          
-          # 2. Install ONLY the modern library
-          pip install pinecone boto3 -t package/
-          
-          # 3. Add your script
+          # Use --platform to force arm64 binaries for Graviton
+          pip install \
+            --platform manylinux2014_aarch64 \
+            --target package \
+            --implementation cp \
+            --python-version 3.12 \
+            --only-binary=:all: \
+            pinecone boto3
           cp ingestor.py package/
-          
-          # 4. Flatten and zip
           cd package && zip -r ../lambda_function.zip .
 
       # --- AUTO-HEALING START ---
