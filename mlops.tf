@@ -23,8 +23,8 @@ resource "aws_s3_object" "lambda_package" {
 }
 
 # 3. THE AI WORKER (AWS LAMBDA)
-resource "aws_lambda_function" "ingestor" {
-  function_name = "enclave-document-ingestor_v2"
+resource "aws_lambda_function" "ingestor_v2" {
+  function_name = "enclave-document-ingestor-v2" # New physical name
   role          = aws_iam_role.lambda_exec.arn
   handler       = "ingestor.lambda_handler"
   runtime       = "python3.12"
@@ -41,7 +41,6 @@ resource "aws_lambda_function" "ingestor" {
     variables = {
       PINECONE_API_KEY        = var.pinecone_api_key
       GCP_PROJECT_ID          = var.gcp_project_id
-      GCP_REGION              = "us-central1"
       GOOGLE_CREDENTIALS_JSON = var.google_credentials
     }
   }
@@ -84,7 +83,7 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
 resource "aws_lambda_permission" "allow_s3" {
   statement_id  = "AllowS3Invoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.ingestor.function_name
+  function_name = aws_lambda_function.ingestor_v2.function_name
   principal     = "s3.amazonaws.com"
   source_arn    = "arn:aws:s3:::multi-cloud-rag-state-mm-041826"
 }

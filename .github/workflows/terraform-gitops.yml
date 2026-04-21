@@ -66,16 +66,19 @@ jobs:
         
       - name: Verify Deployment (The Smoke Test)
         run: |
-          # 1. Wait 30 seconds for AWS resource propagation
-          echo "Waiting for Lambda v2 to converge..."
-          sleep 30
+          # 1. Force a refresh of the AWS CLI state
+          aws lambda list-functions --query 'Functions[].FunctionName' --output text
 
-          # 2. Create the clean JSON
+          # 2. Wait for the new resource to be visible in the API
+          echo "Verifying Lambda v2 exists..."
+          sleep 45
+
+          # 3. Create the clean JSON
           cat <<EOF > event.json
           {"test": "true"}
           EOF
           
-          # 3. Invoke the NEW resource name
+          # 4. Invoke using the physical name directly to bypass ARN resolution issues
           aws lambda invoke \
             --function-name enclave-document-ingestor-v2 \
             --cli-binary-format raw-in-base64-out \
