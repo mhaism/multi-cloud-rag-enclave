@@ -24,7 +24,7 @@ resource "aws_s3_object" "lambda_package" {
 
 # 3. THE AI WORKER (AWS LAMBDA)
 resource "aws_lambda_function" "ingestor" {
-  function_name = "enclave-document-ingestor"
+  function_name = "enclave-document-ingestor_v2"
   role          = aws_iam_role.lambda_exec.arn
   handler       = "ingestor.lambda_handler"
   runtime       = "python3.12"
