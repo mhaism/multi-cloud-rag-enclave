@@ -35,7 +35,7 @@ def lambda_handler(event, context):
     
     # 4. Upsert to Pinecone via REST
     # Using the REST API for Pinecone removes the need for the large client library
-    pinecone_url = f"https://enclave-rag-index-{os.environ.get('PINECONE_ENV', '1bkncx8')}.svc.aped-4627-b74a.pinecone.io/vectors/upsert"
+    pinecone_url = "https://enclave-rag-index-1bkncx8.svc.aped-4627-b74a.pinecone.io/vectors/upsert" 
     
     headers = {
         "Api-Key": os.environ['PINECONE_API_KEY'],
