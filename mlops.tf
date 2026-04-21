@@ -13,13 +13,15 @@ resource "pinecone_index" "enclave_index" {
   }
 }
 
-# 2. THE HEAVY DEPENDENCIES (LAMBDA LAYER)
+# 2. THE LEAN DEPLOYMENT PACKAGE (REST ARCHITECTURE)
 resource "aws_s3_object" "lambda_package" {
   bucket = "multi-cloud-rag-state-mm-041826"
-  key    = "deployments/v_nuclear_lambda_function.zip"
+  # Change the key name to force AWS to pull a fresh, non-cached ZIP
+  key    = "deployments/v_final_rest_v5.zip" 
   source = "lambda_function.zip"
   etag   = filemd5("lambda_function.zip")
 }
+
 # 3. THE AI WORKER (AWS LAMBDA)
 resource "aws_lambda_function" "ingestor" {
   function_name = "enclave-document-ingestor"
@@ -28,13 +30,11 @@ resource "aws_lambda_function" "ingestor" {
   runtime       = "python3.12"
   architectures = ["arm64"]
   timeout       = 30
-  memory_size   = 256 # Reduced memory since we aren't loading heavy SDKs
-  s3_key = aws_s3_object.lambda_package.key # This now points to the new key
 
   s3_bucket = aws_s3_object.lambda_package.bucket
   s3_key    = aws_s3_object.lambda_package.key
 
-  # No layers needed anymore!
+  # MANDATORY: Keep this empty to ensure the old 289MB layer is detached
   layers = []
 
   environment {
@@ -46,6 +46,7 @@ resource "aws_lambda_function" "ingestor" {
     }
   }
 }
+
 # 4. IAM PERMISSIONS (RETAINED)
 resource "aws_iam_role" "lambda_exec" {
   name = "enclave_lambda_role"
