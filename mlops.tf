@@ -16,7 +16,7 @@ resource "pinecone_index" "enclave_index" {
 # 2. THE HEAVY DEPENDENCIES (LAMBDA LAYER)
 resource "aws_s3_object" "lambda_package" {
   bucket = "multi-cloud-rag-state-mm-041826"
-  key    = "deployments/lambda_function.zip"
+  key    = "deployments/v_nuclear_lambda_function.zip"
   source = "lambda_function.zip"
   etag   = filemd5("lambda_function.zip")
 }
@@ -29,6 +29,7 @@ resource "aws_lambda_function" "ingestor" {
   architectures = ["arm64"]
   timeout       = 30
   memory_size   = 256 # Reduced memory since we aren't loading heavy SDKs
+  s3_key = aws_s3_object.lambda_package.key # This now points to the new key
 
   s3_bucket = aws_s3_object.lambda_package.bucket
   s3_key    = aws_s3_object.lambda_package.key
