@@ -91,7 +91,7 @@ resource "aws_lambda_permission" "allow_s3" {
 resource "aws_s3_bucket_notification" "bucket_notification" {
   bucket = "multi-cloud-rag-state-mm-041826"
   lambda_function {
-    lambda_function_arn = aws_lambda_function.ingestor.arn
+    lambda_function_arn = aws_lambda_function.ingestor_v2.arn
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "documents/"
     filter_suffix       = ".txt"
