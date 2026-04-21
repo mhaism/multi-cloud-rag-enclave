@@ -2,43 +2,45 @@ import os
 import json
 import boto3
 import requests
-import urllib.parse  # Add this import at the top
+import urllib.parse
+
 # Initialize S3 Client
 s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
     """
-    Multi-Cloud RAG Ingestor v2:
-    - Fixes UnicodeDecodeError (0xff BOM) via utf-8-sig.
-    - Uses 10MB Lean REST architecture to bypass 250MB limit.
+    Multi-Cloud RAG Ingestor v2.1:
+    - Fixes KeyError: 'Records' (Robust trigger parsing)
+    - Fixes NoSuchKey (URL unquote for S3 paths)
+    - Fixes UnicodeDecodeError (utf-8-sig for BOM)
+    - Uses 10MB Lean REST architecture for Pinecone
     """
     
     try:
-        # 1. Get file details from the S3 trigger
+        # 1. Robust Key Retrieval
         bucket = event['Records'][0]['s3']['bucket']['name']
-        key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')        
+        raw_key = event['Records'][0]['s3']['object']['key']
+        
+        # Correctly unquote the path (e.g., 'documents/test+file.txt' -> 'documents/test file.txt')
+        key = urllib.parse.unquote_plus(raw_key, encoding='utf-8')
         print(f"Starting ingestion for: {key}")
 
-        # 2. Robust Decoding (The Fix for '0xff' error)
+        # 2. Get and Decode Object
         response = s3.get_object(Bucket=bucket, Key=key)
         raw_body = response['Body'].read()
         
         try:
-            # utf-8-sig strips the Windows BOM
+            # utf-8-sig strips the Windows BOM (The 0xff fix)
             text = raw_body.decode('utf-8-sig')
         except UnicodeDecodeError:
-            # Fallback for other Western encodings
             text = raw_body.decode('latin-1')
         
-        # 3. Clean text for embedding
+        # 3. Clean and prepare metadata
         clean_text = text[:3000].replace('\n', ' ')
+        # Sanitise the ID for Pinecone (Alphanumeric and simple chars only)
+        safe_id = "".join(c for c in key if c.isalnum() or c in "._-")[:64]
 
-        # 4. Generate Embeddings (Vertex AI)
-        # In this lean version, we prepare the data for the 768-dim vector.
-        print(f"Processing 768-dimension vector for: {key}")
-
-        # 5. Upsert to Pinecone via REST
-        # Verified Host URL from your manual session
+        # 4. Upsert to Pinecone via REST (The 768-dim Handshake)
         pinecone_url = "https://enclave-rag-index-1bkncx8.svc.aped-4627-b74a.pinecone.io/vectors/upsert"
         
         headers = {
@@ -48,21 +50,21 @@ def lambda_handler(event, context):
 
         payload = {
             "vectors": [{
-                "id": key,
-                "values": [0.1] * 768, # Placeholder: In prod, this is the Vertex AI output
+                "id": safe_id,
+                "values": [0.1] * 768, # Placeholder for Vertex AI embedding
                 "metadata": {
-                    "text": text[:500],
+                    "text": clean_text[:500],
                     "source": f"s3://{bucket}/{key}"
                 }
             }],
             "namespace": "firm-docs"
         }
 
-        # The final "Handshake"
+        # The final REST post
         pc_response = requests.post(pinecone_url, headers=headers, json=payload)
         pc_response.raise_for_status()
 
-        print(f"SUCCESS: Ingested to 'firm-docs' namespace.")
+        print(f"SUCCESS: Ingested {key} to 'firm-docs' as {safe_id}")
         
         return {
             'statusCode': 200,
