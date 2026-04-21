@@ -63,3 +63,11 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
+        
+      - name: Verify Deployment (The Smoke Test)
+        run: |
+          aws lambda invoke \
+            --function-name enclave-document-ingestor-v2 \
+            --payload '{"test": "true"}' \
+            response.json
+          cat response.json
