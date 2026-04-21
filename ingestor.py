@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     try:
         # 1. Get file details from the S3 trigger
         bucket = event['Records'][0]['s3']['bucket']['name']
-        key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8') = event['Records'][0]['s3']['object']['key']
+        key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')        
         print(f"Starting ingestion for: {key}")
 
         # 2. Robust Decoding (The Fix for '0xff' error)
