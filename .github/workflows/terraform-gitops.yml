@@ -66,14 +66,13 @@ jobs:
         
       - name: Verify Deployment (The Smoke Test)
         run: |
-          # 1. Create a clean JSON file to avoid shell encoding issues
-          echo '{"test": "true"}' > smoke_test_event.json
-          
-          # 2. Invoke using the file path
+          # Use Base64 encoding to bypass all shell/UTF-8 character issues
+          # 'eyJ0ZXN0IjogInRydWUi fQ==' is Base64 for '{"test": "true"}'
           aws lambda invoke \
             --function-name enclave-document-ingestor-v2 \
-            --payload file://smoke_test_event.json \
+            --payload 'eyJ0ZXN0IjogInRydWUi fQ==' \
+            --cli-binary-format raw-in-base64-out \
             response.json
             
-          # 3. Output the result to the GitHub Log
+          # Output the result to the GitHub Log
           cat response.json
