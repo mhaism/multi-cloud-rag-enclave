@@ -66,13 +66,17 @@ jobs:
         
       - name: Verify Deployment (The Smoke Test)
         run: |
-          # Use Base64 encoding to bypass all shell/UTF-8 character issues
-          # 'eyJ0ZXN0IjogInRydWUi fQ==' is Base64 for '{"test": "true"}'
+          # 1. Create a clean JSON file using a heredoc to avoid any shell quoting issues
+          cat <<EOF > event.json
+          {"test": "true"}
+          EOF
+          
+          # 2. Invoke using the file with the specific binary format flag
           aws lambda invoke \
             --function-name enclave-document-ingestor-v2 \
-            --payload 'eyJ0ZXN0IjogInRydWUi fQ==' \
             --cli-binary-format raw-in-base64-out \
+            --payload file://event.json \
             response.json
             
-          # Output the result to the GitHub Log
+          # 3. Output the result
           cat response.json
